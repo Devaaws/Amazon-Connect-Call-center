@@ -1,0 +1,318 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Amazon Connect instance CloudFormation template.
+  
+Resources:
+  AmazonConnectInstance:
+    Type: AWS::Connect::Instance
+    Properties:
+      Attributes:
+        ContactflowLogs: true
+        InboundCalls: true
+        OutboundCalls: true
+      IdentityManagementType: CONNECT_MANAGED
+      InstanceAlias: my-connect-instance014
+
+  HoursOfOperation:
+    Type: AWS::Connect::HoursOfOperation
+    Properties:
+      Name: NewHours
+      Description: 24/5 Hours
+      InstanceArn: !GetAtt AmazonConnectInstance.Arn
+      TimeZone: "UTC"
+      Config:
+        - Day: MONDAY
+          EndTime:
+            Hours: 23
+            Minutes: 59
+          StartTime:
+            Hours: 0
+            Minutes: 0
+        - Day: TUESDAY
+          EndTime:
+            Hours: 23
+            Minutes: 59
+          StartTime:
+            Hours: 0
+            Minutes: 0
+        - Day: WEDNESDAY
+          EndTime:
+            Hours: 23
+            Minutes: 59
+          StartTime:
+            Hours: 0
+            Minutes: 0
+        - Day: THURSDAY
+          EndTime:
+            Hours: 23
+            Minutes: 59
+          StartTime:
+            Hours: 0
+            Minutes: 0
+        - Day: FRIDAY
+          EndTime:
+            Hours: 23
+            Minutes: 59
+          StartTime:
+            Hours: 0
+            Minutes: 0
+
+  GetSecurityProfileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+        - arn:aws:iam::aws:policy/AmazonConnect_FullAccess
+      Policies:
+        - PolicyName: listConnectSecurityProfiles
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - connect:ListSecurityProfiles
+                Resource: !Sub arn:${AWS::Partition}:connect:${AWS::Region}:${AWS::AccountId}:instance*
+                Condition:
+                  StringEquals:
+                    connect:InstanceId: !GetAtt AmazonConnectInstance.Id
+
+  CustomResourceGetContactFlowCustomerQueue:
+    Type: AWS::Connect::Queue
+    Properties:
+      Description: "Default Outbound Queue"
+      Name: "my-default-outbound-queue"
+      HoursOfOperationArn: !GetAtt HoursOfOperation.HoursOfOperationArn
+      InstanceArn: !GetAtt AmazonConnectInstance.Arn
+
+  MyRoutingProfile:
+    Type: AWS::Connect::RoutingProfile
+    Properties:
+      DefaultOutboundQueueId: !GetAtt CustomResourceGetContactFlowCustomerQueue.QueueId
+      Description: "Test Profile"
+      InstanceArn: !GetAtt AmazonConnectInstance.Arn
+      Name: "my-routing-profile"
+      MediaConcurrencies:
+        - Channel: "VOICE"
+          Concurrency: 1
+
+  ConnectSecurityProfile:
+    Type: AWS::Connect::SecurityProfile
+    Properties:
+      SecurityProfileName: "MySecurityProfile"
+      Description: "Demo Security Profile"
+      InstanceArn: !GetAtt AmazonConnectInstance.Arn
+
+  ConnectUserAgent:
+    Type: AWS::Connect::User
+    Properties:
+      IdentityInfo:
+        FirstName: demo
+        LastName: user
+      PhoneConfig:
+        PhoneType: DESK_PHONE
+        AutoAccept: true
+        DeskPhoneNumber: '+12345678902'
+        AfterContactWorkTimeLimit: 10
+      Username: demouser
+      InstanceArn: !GetAtt AmazonConnectInstance.Arn
+      RoutingProfileArn: !GetAtt MyRoutingProfile.RoutingProfileArn
+      SecurityProfileIds:
+        - !GetAtt ConnectSecurityProfile.SecurityProfileId  
+      Password: "Demouser123"
+
+  Flow:
+    Type: AWS::Connect::ContactFlow
+    Properties:
+      Name: SimpleFlow
+      Description: A simple contact flow
+      InstanceArn: !GetAtt AmazonConnectInstance.Arn
+      Type: CONTACT_FLOW
+      Content: |
+        {
+          "Version": "2019-10-30",
+          "StartAction": "62a6f178-59e1-4677-9a2b-b2e78a4303be",
+          "Metadata": {
+            "entryPointPosition": {
+              "x": 40,
+              "y": 40
+            },
+            "ActionMetadata": {
+              "62a6f178-59e1-4677-9a2b-b2e78a4303be": {
+                "position": {
+                  "x": 133.6,
+                  "y": 41.6
+                }
+              },
+              "Call Center Techinical Flow": {
+                "position": {
+                  "x": 750.4,
+                  "y": 129.6
+                },
+                "isFriendlyName": true,
+                "parameters": {
+                  "ContactFlowId": {
+                    "displayName": "Technical support Flow"
+                  }
+                },
+                "ContactFlow": {
+                  "text": "Technical support Flow"
+                }
+              },
+              "66dd5088-f25a-4a63-ae84-61a3e6bba999": {
+                "position": {
+                  "x": 386.4,
+                  "y": 9.6
+                },
+                "conditionMetadata": [
+                  {
+                    "id": "fa9d9a5e-013e-4af2-b5eb-fed235be2b30",
+                    "value": "1"
+                  },
+                  {
+                    "id": "33f571ba-9f06-4541-b84e-48062a36246d",
+                    "value": "2"
+                  }
+                ]
+              },
+              "93d26756-9f69-452e-84fe-5e7babadc618": {
+                "position": {
+                  "x": 1128.8,
+                  "y": -74.4
+                }
+              },
+              "Call Center Sales Flow": {
+                "position": {
+                  "x": 795.2,
+                  "y": -18.4
+                },
+                "isFriendlyName": true,
+                "parameters": {
+                  "ContactFlowId": {
+                    "displayName": "Sales Flow"
+                  }
+                },
+                "ContactFlow": {
+                  "text": "Sales Flow"
+                }
+              }
+            },
+            "Annotations": [],
+            "name": "Call Center Application Flow",
+            "description": "",
+            "type": "contactFlow",
+            "status": "published",
+            "hash": {}
+          },
+          "Actions": [
+            {
+              "Parameters": {
+                "Text": "Welcome to the Company"
+              },
+              "Identifier": "62a6f178-59e1-4677-9a2b-b2e78a4303be",
+              "Type": "MessageParticipant",
+              "Transitions": {
+                "NextAction": "66dd5088-f25a-4a63-ae84-61a3e6bba999"
+              },
+              "Errors": [
+                {
+                  "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618",
+                  "ErrorType": "NoMatchingError"
+                }
+              ]
+            },
+            {
+              "Parameters": {
+                "ContactFlowId": "arn:aws:connect:ca-central-1:716612844120:instance/fc44d940-b826-4359-b8af-26b0e99dcbd3/contact-flow/52f430ca-2824-4f26-b693-556cbf651c91"
+              },
+              "Identifier": "Call Center Techinical Flow",
+              "Type": "TransferToFlow",
+              "Transitions": {
+                "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618"
+              },
+              "Errors": [
+                {
+                  "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618",
+                  "ErrorType": "NoMatchingError"
+                }
+              ]
+            },
+            {
+              "Parameters": {
+                "StoreInput": "False",
+                "InputTimeLimitSeconds": "5",
+                "Text": "Press 1 for sales\nPress 2 for Technical support"
+              },
+              "Identifier": "66dd5088-f25a-4a63-ae84-61a3e6bba999",
+              "Type": "GetParticipantInput",
+              "Transitions": {
+                "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618"
+              },
+              "Conditions": [
+                {
+                  "NextAction": "Call Center Sales Flow",
+                  "Condition": {
+                    "Operator": "Equals",
+                    "Operands": [
+                      "1"
+                    ]
+                  }
+                },
+                {
+                  "NextAction": "Call Center Techinical Flow",
+                  "Condition": {
+                    "Operator": "Equals",
+                    "Operands": [
+                      "2"
+                    ]
+                  }
+                }
+              ],
+              "Errors": [
+                {
+                  "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618",
+                  "ErrorType": "InputTimeLimitExceeded"
+                },
+                {
+                  "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618",
+                  "ErrorType": "NoMatchingCondition"
+                },
+                {
+                  "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618",
+                  "ErrorType": "NoMatchingError"
+                }
+              ]
+            },
+            {
+              "Parameters": {},
+              "Identifier": "93d26756-9f69-452e-84fe-5e7babadc618",
+              "Type": "DisconnectParticipant",
+              "Transitions": {}
+            },
+            {
+              "Parameters": {
+                "ContactFlowId": "arn:aws:connect:ca-central-1:716612844120:instance/fc44d940-b826-4359-b8af-26b0e99dcbd3/contact-flow/fefe8221-7e09-46f8-a537-e4959fbd1ecb"
+              },
+              "Identifier": "Call Center Sales Flow",
+              "Type": "TransferToFlow",
+              "Transitions": {
+                "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618"
+              },
+              "Errors": [
+                {
+                  "NextAction": "93d26756-9f69-452e-84fe-5e7babadc618",
+                  "ErrorType": "NoMatchingError"
+                }
+              ]
+            }
+          ]
+        }

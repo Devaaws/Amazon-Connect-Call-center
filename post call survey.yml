@@ -1,0 +1,95 @@
+Version: '2019-10-30'
+StartAction: fe45a289-31de-44d5-9f80-9f45bf311696
+Metadata:
+  entryPointPosition:
+    x: -291.2
+    'y': -123.2
+  ActionMetadata:
+    fe45a289-31de-44d5-9f80-9f45bf311696:
+      position:
+        x: -140
+        'y': -180.8
+      conditionMetadata:
+        - id: 33bf0331-d173-4891-810a-4f6247a48230
+          value: '1'
+        - id: 50db910f-ba5e-43c5-88a5-33f95c6fe8e9
+          value: '2'
+        - id: cf543e2f-bd0b-4629-9bfe-ae423955259a
+          value: '3'
+        - id: 24872bcd-d995-4551-92b2-d557fe9f83ce
+          value: '4'
+        - id: efe1b79c-2d92-4ad9-97d4-db26107ca9fe
+          value: '5'
+    e9bf9989-abe6-4a39-8823-cd8f74ef1258:
+      position:
+        x: 148
+        'y': -150.4
+    dee07681-256d-4b38-96ef-d6df6641e044:
+      position:
+        x: 450.4
+        'y': -90.4
+  Annotations: []
+  name: post call survey
+  description: ''
+  type: contactFlow
+  status: published
+  hash: {}
+Actions:
+  - Parameters:
+      StoreInput: 'False'
+      InputTimeLimitSeconds: '5'
+      Text: >-
+        How would you rate the performance of the agent on a scale of 1 to 5,
+        with 1 being the lowest and 5 being the highest
+    Identifier: fe45a289-31de-44d5-9f80-9f45bf311696
+    Type: GetParticipantInput
+    Transitions:
+      NextAction: dee07681-256d-4b38-96ef-d6df6641e044
+      Conditions:
+        - NextAction: e9bf9989-abe6-4a39-8823-cd8f74ef1258
+          Condition:
+            Operator: Equals
+            Operands:
+              - '1'
+        - NextAction: e9bf9989-abe6-4a39-8823-cd8f74ef1258
+          Condition:
+            Operator: Equals
+            Operands:
+              - '2'
+        - NextAction: e9bf9989-abe6-4a39-8823-cd8f74ef1258
+          Condition:
+            Operator: Equals
+            Operands:
+              - '3'
+        - NextAction: e9bf9989-abe6-4a39-8823-cd8f74ef1258
+          Condition:
+            Operator: Equals
+            Operands:
+              - '4'
+        - NextAction: e9bf9989-abe6-4a39-8823-cd8f74ef1258
+          Condition:
+            Operator: Equals
+            Operands:
+              - '5'
+      Errors:
+        - NextAction: dee07681-256d-4b38-96ef-d6df6641e044
+          ErrorType: InputTimeLimitExceeded
+        - NextAction: dee07681-256d-4b38-96ef-d6df6641e044
+          ErrorType: NoMatchingCondition
+        - NextAction: dee07681-256d-4b38-96ef-d6df6641e044
+          ErrorType: NoMatchingError
+  - Parameters:
+      Text: >-
+        We are so happy that your experience was great. We hope you have a
+        wonderful day.
+    Identifier: e9bf9989-abe6-4a39-8823-cd8f74ef1258
+    Type: MessageParticipant
+    Transitions:
+      NextAction: dee07681-256d-4b38-96ef-d6df6641e044
+      Errors:
+        - NextAction: dee07681-256d-4b38-96ef-d6df6641e044
+          ErrorType: NoMatchingError
+  - Parameters: {}
+    Identifier: dee07681-256d-4b38-96ef-d6df6641e044
+    Type: DisconnectParticipant
+    Transitions: {}
